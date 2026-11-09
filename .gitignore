@@ -1,0 +1,9 @@
+target/
+.DS_Store
+*.wav
+*.aif
+*.aiff
+*.f32
+__pycache__/
+/reference/guide.pdf
+Icon

@@ -1,0 +1,17 @@
+[vendor]
+name = "Jardim Sonoro"
+id = "com.jardimsonoro"
+url = "https://github.com/nagualcode/rocketscience3000"
+au_manufacturer = "JdSn"
+
+[[plugin]]
+name = "Roger3K"
+bundle_id = "roger3k"
+crate = "roger"
+category = "effect"
+fourcc = "Rogr"
+au3_subtype = "Rgr3"
+au_tag = "Filter"
+vst3_subcategory = "Fx|Filter"
+au3_name = "Roger3K (AUv3)"
+midi_input = true
