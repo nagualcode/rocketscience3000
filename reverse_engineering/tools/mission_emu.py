@@ -222,7 +222,12 @@ class Mission:
     def imp_sqrt(self): self.ret_double(math.sqrt(self.argd(0)))
     def imp_floor(self): self.ret_double(math.floor(self.argd(0)))
     def imp_ceil(self): self.ret_double(math.ceil(self.argd(0)))
-    def imp_pow(self): self.ret_double(math.pow(self.argd(0), self.argd(2)))
+    def imp_pow(self):
+        try:
+            v = math.pow(self.argd(0), self.argd(2))
+        except OverflowError:   # C's pow returns ±inf
+            v = math.inf
+        self.ret_double(v)
     # float libm: correctly rounded through double, like the Rust port
     def imp_cosf(self): self.ret_float(math.cos(self.argf(0)))
     def imp_sinf(self): self.ret_float(math.sin(self.argf(0)))

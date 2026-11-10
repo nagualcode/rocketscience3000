@@ -22,7 +22,7 @@ Phase Nine, PeriScope) and [th0nk3000](https://github.com/nagualcode/th0nk3000).
 | Plug-in | What it is | Status |
 |---|---|---|
 | [**Roger3K**](#roger3k--multiple-gender-vowel-bank) | vowel filter: ten vowels, three voices, tempo-synced babble | ✅ engine bit-identical to the original (55/55); plug-in, editor, CLI |
-| **Follo3K** | "energy driven band booster": a resonator whose peak follows the input level — auto-wah, thumping bass | planned |
+| [**Follo3K**](#follo3k--energy-driven-band-booster) | "energy driven band booster": a resonator whose peak follows the input level — auto-wah, thumping bass | ✅ engine bit-identical to the original (41/41); plug-in, editor, CLI |
 | **Orbit3K** | "psycho-acoustic flight path simulator": a source moving in a virtual room, reflections and Doppler | planned |
 
 "Bit-identical": the original 3.6.2 machine code runs in a CPU emulator, fed
@@ -136,10 +136,64 @@ roger-render drums.wav out.wav --auto --speed 6 --skip 25 --bpm 120 --portamento
 
 ---
 
+## Follo3K — energy driven band booster
+
+![Follo3K, modern theme](docs/follo.png)
+
+> *Follo dynamically adjusts the peak of a resonating bandpass filter according
+> to the level of the incoming audio.* — Audio Ease
+
+### The idea
+
+An auto-wah: one sharp, resonant band whose frequency is pushed by how loud
+you play. Quiet, it rests on the **yellow** slider; loud, it flies to the
+**blue** one; when you stop, it falls back at the **release** speed. Set the
+blue slider *below* the yellow one and loud notes pull the band *down*; set
+both low and narrow and every hit becomes a thump of resonating bass.
+
+### Walk-through
+
+| Control | What it does |
+|---|---|
+| **Filter peak at low amplitude** (yellow, top strip) | where the band sits when the input is quiet — 20 Hz to 10.2 kHz in tenths of a semitone |
+| **Filter peak at high amplitude** (blue, bottom strip) | where the band goes when the input is loud (full scale and above) |
+| the ball | where the band is now |
+| **Analysis** | sensitivity of the level detector, −12…+12 dB: high settings make the ball hit the blue slider often. It does not change the output level |
+| **Bandwidth** | from a razor-thin, whistling band (1: 0.07 semitone) through 2.5 semitones at 50 to a wide open filter at 100 |
+| **Release** | how fast the ball falls back: 40 ms to 3 s (169 ms at 50) |
+| **Output** | (3K) output trim |
+
+The band display shows the filter's actual response around the ball. Mono and
+stereo Follo move the band with the *square* of the level (it stays near the
+yellow slider until you play loud); the **mono→stereo** Follo moves it
+linearly and sends the band left and everything else right — Audio Ease's
+advice: try it on synth basses, it does strange things to the stereo image. A
+look-ahead limiter (300 samples) keeps the resonances in check.
+
+**MIDI**: CC 11 analysis (or "drive"), 12 bandwidth, 13 release, 14 yellow
+slider, 15 blue slider.
+
+### Recipes
+
+* **Classic auto-wah** — guitar or clav: yellow at ~300 Hz, blue at ~2 kHz,
+  bandwidth 30–40, release 40, analysis to taste.
+* **Thumping bass** — kick or bass: yellow at 40 Hz, blue at 120 Hz,
+  bandwidth 5–10, analysis +12: the band slams into the blue slider on every
+  hit and rings.
+* **Reverse wah** — blue *below* yellow: loud notes close the filter.
+* **Stereo smear** — mono→stereo on a synth bass, bandwidth 20, release 70.
+
+![Follo3K, classic theme](docs/follo-classic.png)
+
+```bash
+follo-render bass.wav out.wav --low 40 --high 200 --bandwidth 8 --analysis 12
+```
+
+---
+
 ## How faithful is it?
 
-**Bit for bit.** Roger's engine is a translation of the i386 slice of
-`Roger.vst` 3.6.2. The original machine code — `InitBuffers`, `Process`,
+**Bit for bit.** Each engine is a translation of the i386 slice of the 3.6.2 plug-in. The original machine code — `InitBuffers`, `Process`,
 `ReceiveMidi`, its own parameter objects and host-time context — runs under
 the Unicorn CPU emulator:
 
@@ -156,8 +210,12 @@ uninitialised memory; with no host tempo, Auto changes vowel on every sample
 (the host-time object sets its tempo before it knows the sample rate); and
 2π typed as 6.2831853056 — the same typo as in PeriScope, by the same hand.
 The Mac OS 9 Roger (v2.04) carries the identical vowel table, bit for bit.
-Details, addresses and the emulator in
-**[reverse_engineering/roger](reverse_engineering/roger/README.md)**.
+Follo: **41 scenarios, 41 identical** (layouts, bandwidth, release,
+analysis, sliders, MIDI CCs, block sizes, sample rates); its quirks: the band
+moves with the level in mono→stereo but with its square in mono and stereo,
+and both mistyped π constants. Details, addresses and the emulators in
+**[reverse_engineering/roger](reverse_engineering/roger/README.md)** and
+**[reverse_engineering/follo](reverse_engineering/follo/README.md)**.
 
 ---
 
@@ -168,7 +226,7 @@ Requirements: Rust 1.85+ and [`cargo-truce`](https://github.com/truce-audio/truc
 ```bash
 cargo test --release
 cargo run --release -p roger --bin roger-standalone
-cargo truce install --au2 --user && auval -v aumf Rogr JdSn
+cargo truce install --au2 --user && auval -v aumf Rogr JdSn && auval -v aumf Folo JdSn
 python3 reverse_engineering/roger/tools/differential_test.py \
     reverse_engineering/roger/original_binaries/Roger-3.6.2-VST-i386 target/release/roger-render /tmp/roger
 ```
@@ -180,9 +238,11 @@ rocketscience3000/
 ├── crates/mission/      # Audio Ease "Mission" pieces: AGC / limiter, breakpoint
 │                        #   tables, ring buffer, vecLib FFT, denormal flush
 ├── plugins/roger/       # Roger3K: engine, vowel table, params, editor, roger-render
+├── plugins/follo/       # Follo3K: engine, params, editor, follo-render
 ├── reverse_engineering/
 │   ├── tools/           # Ghidra script, Mach-O / PEF helpers, asm annotator, Unicorn harness
-│   └── roger/           # write-up, original binaries, decompiled code, emulator, test
+│   ├── roger/           # write-up, original binaries, decompiled code, emulator, test
+│   └── follo/           # the same for Follo
 ├── reference/           # the original material: Mac OS 9 plug-ins and manual,
 │                        #   OS X installer and manual, review
 └── docs/                # screenshots

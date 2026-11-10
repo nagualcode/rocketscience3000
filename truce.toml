@@ -15,3 +15,15 @@ au_tag = "Filter"
 vst3_subcategory = "Fx|Filter"
 au3_name = "Roger3K (AUv3)"
 midi_input = true
+
+[[plugin]]
+name = "Follo3K"
+bundle_id = "follo3k"
+crate = "follo"
+category = "effect"
+fourcc = "Folo"
+au3_subtype = "Fol3"
+au_tag = "Filter"
+vst3_subcategory = "Fx|Filter"
+au3_name = "Follo3K (AUv3)"
+midi_input = true
