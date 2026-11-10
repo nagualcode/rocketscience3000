@@ -27,3 +27,15 @@ au_tag = "Filter"
 vst3_subcategory = "Fx|Filter"
 au3_name = "Follo3K (AUv3)"
 midi_input = true
+
+[[plugin]]
+name = "Orbit3K"
+bundle_id = "orbit3k"
+crate = "orbit"
+category = "effect"
+fourcc = "Orbt"
+au3_subtype = "Orb3"
+au_tag = "Spatial"
+vst3_subcategory = "Fx|Spatial"
+au3_name = "Orbit3K (AUv3)"
+midi_input = true

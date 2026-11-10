@@ -52,7 +52,7 @@ jobs:
         # The state-reproducibility tests fail identically for truce's own
         # examples (truce v6.3.0); everything else must pass.
         run: |
-          for p in Roger3K Follo3K; do
+          for p in Roger3K Follo3K Orbit3K; do
             "$CLAP_VALIDATOR" validate "$HOME/Library/Audio/Plug-Ins/CLAP/$p.clap" -x state-reproducibility
           done
 
@@ -81,6 +81,6 @@ jobs:
         # AU is macOS-only: the plug-in crates build here without it.
         run: |
           cargo test --release --locked -p mission
-          for p in roger follo; do
+          for p in roger follo orbit; do
             cargo test --release --locked -p $p --no-default-features --features clap,vst3 --lib
           done

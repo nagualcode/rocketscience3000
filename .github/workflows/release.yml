@@ -1,7 +1,7 @@
 name: Release
 
-# Builds the release binaries of the Rocket Science plug-ins (Roger3K, Follo3K;
-# Orbit3K to come) for the three supported platforms and
+# Builds the release binaries of the Rocket Science plug-ins (Roger3K, Follo3K,
+# Orbit3K) for the three supported platforms and
 # attaches them to the GitHub release of the tag that triggered the run.
 #
 #   macOS (Apple Silicon)  AU v2 + VST3 + CLAP + Standalone .apps + CLIs
@@ -30,8 +30,8 @@ env:
   CARGO_INCREMENTAL: 0
   # cargo-truce from the same truce revision Cargo.lock pins.
   TRUCE_REV: 25791270cf7ca1309cb6bdc6fa75a6fe94617d1c
-  CRATES: roger follo
-  CLIS: roger-render follo-render
+  CRATES: roger follo orbit
+  CLIS: roger-render follo-render orbit-render
 
 permissions:
   contents: write

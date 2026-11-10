@@ -23,7 +23,7 @@ Phase Nine, PeriScope) and [th0nk3000](https://github.com/nagualcode/th0nk3000).
 |---|---|---|
 | [**Roger3K**](#roger3k--multiple-gender-vowel-bank) | vowel filter: ten vowels, three voices, tempo-synced babble | ✅ engine bit-identical to the original (55/55); plug-in, editor, CLI |
 | [**Follo3K**](#follo3k--energy-driven-band-booster) | "energy driven band booster": a resonator whose peak follows the input level — auto-wah, thumping bass | ✅ engine bit-identical to the original (41/41); plug-in, editor, CLI |
-| **Orbit3K** | "psycho-acoustic flight path simulator": a source moving in a virtual room, reflections and Doppler | planned |
+| [**Orbit3K**](#orbit3k--psycho-acoustic-flight-path-simulator) | "psycho-acoustic flight path simulator": a source moving in a virtual room, reflections and Doppler | ✅ engine bit-identical to the original (39/39); plug-in, editor, CLI |
 
 "Bit-identical": the original 3.6.2 machine code runs in a CPU emulator, fed
 the same audio, settings, MIDI and tempo as the Rust engine, and the outputs
@@ -33,9 +33,13 @@ are compared float for float — see [How faithful is it?](#how-faithful-is-it).
 
 ## Installing
 
-Build from source (see [Building](#building)); release builds will be
-published with the GitHub Actions setup of nautilus3000 once the bundle is
-complete.
+Release builds (macOS Apple Silicon: AU, VST3, CLAP; Linux: CLAP, VST3, LV2;
+Windows: CLAP, VST3; each with standalone apps and CLI renderers) are built by
+GitHub Actions for every tagged version and attached to the
+[Releases](https://github.com/nagualcode/rocketscience3000/releases). The
+macOS builds are not notarised: clear the quarantine flag with
+`xattr -dr com.apple.quarantine <bundle>`. Or build from source (see
+[Building](#building)):
 
 ```bash
 cargo truce install --au2 --user        # AU only, into ~/Library/Audio/Plug-Ins/Components
@@ -191,6 +195,70 @@ follo-render bass.wav out.wav --low 40 --high 200 --bandwidth 8 --analysis 12
 
 ---
 
+## Orbit3K — psycho-acoustic flight path simulator
+
+![Orbit3K, modern theme](docs/orbit.png)
+
+> *Orbit lets you control the virtual position of your sound source. It
+> accurately calculates the sound source's reflections of the walls of a
+> virtual 'outer room', using the exact amount of delay and attenuation for
+> the direct sound and all reflections alike.* — Audio Ease
+
+### The idea
+
+A sound flying around you in a room. Orbit computes what your two ears would
+hear: the direct sound and its reflections off the four walls (up to the fifth
+order — 61 paths per ear), each arriving with its own delay at 340 m/s, its
+own loudness (distance, walls, the shadow of your head) and its own **Doppler
+shift** — coming closer it rises in pitch, going away it falls, and every
+reflection does so separately. This is F. R. Moore's classic 1983 model of
+spatial sound. Use it as a physically correct panner, or let the source fly.
+
+### Walk-through
+
+**The room** (seen from above, "forward" is up): the tiled square is the
+**outer room**, the light-blue square is the **inner room** where you sit — its
+top corners are your ears, a *speaker span* apart. The red ball is the source,
+the trail where it has been; faint dots are its mirror images in the walls,
+which is where the reflections seem to come from. Drag the inner room to move
+the listener.
+
+| Control | What it does |
+|---|---|
+| **Motion** | *Static* — the source sits where you click; *Follow clicks* — it flies to every point you click, cutting corners, at the set speed; *Ellipse* / *Ellipse backwards* — it circles the white ellipse; *Buck Rogers on LSD* — it darts at random inside the ellipse |
+| **Speed** | 0–99 m/s. Fast flights give strong Doppler sweeps |
+| **Room size** | 8–80 m: bigger rooms, later and more spread reflections |
+| **Speaker span** | 0.2–6 m between your ears / speakers: how wide the stereo image is |
+| **Reflections** | 0 (direct sound only) to 5 orders of reflections |
+| **High Damp** | how much the walls swallow the highs (the direct sound stays bright) |
+| **Ellipse** | radius and centre of the orbit |
+| **Output** | (3K) output trim |
+
+**MIDI**: CC 11 room size, 12 / 13 listener Y / X, 14 high damp, 15 speed,
+16 / 17 ellipse radius, 18 / 19 ellipse position, 20 speaker span, CC 1 the Y
+target; **notes** steer the source — the key picks X (C2 at the left wall,
+five octaves across), the velocity Y; **pitch bend** sweeps X; **program
+change** picks the motion.
+
+### Recipes
+
+* **Fly-by** — Follow clicks, speed 40–70, room 40, reflections 1: click left
+  of the listener, then far right: the Doppler swoosh of a passing car.
+* **Slow orbit** — Ellipse, speed 2–4, reflections 3, high damp 40: a voice
+  walking around you in a hall.
+* **Insect** — Buck Rogers on LSD, speed 30, small ellipse, room 8: a fly
+  buzzing around your head.
+* **Static placement** — Static, reflections 2: a dry mono source placed in a
+  room, with real early reflections instead of panning.
+
+![Orbit3K, classic theme](docs/orbit-classic.png)
+
+```bash
+orbit-render voice.wav out.wav --mode 3 --speed 8 --room 30 --order 3 --damp 30
+```
+
+---
+
 ## How faithful is it?
 
 **Bit for bit.** Each engine is a translation of the i386 slice of the 3.6.2 plug-in. The original machine code — `InitBuffers`, `Process`,
@@ -213,9 +281,16 @@ The Mac OS 9 Roger (v2.04) carries the identical vowel table, bit for bit.
 Follo: **41 scenarios, 41 identical** (layouts, bandwidth, release,
 analysis, sliders, MIDI CCs, block sizes, sample rates); its quirks: the band
 moves with the level in mono→stereo but with its square in mono and stereo,
-and both mistyped π constants. Details, addresses and the emulators in
-**[reverse_engineering/roger](reverse_engineering/roger/README.md)** and
-**[reverse_engineering/follo](reverse_engineering/follo/README.md)**.
+and both mistyped π constants. Orbit: **39 scenarios, 39 identical**
+(every motion, reflection orders 0–5, rooms 8–80 m, damping, MIDI, block sizes,
+8–96 kHz); its quirks: a Doppler resampler that reads up to two samples past
+its input (the original read whatever followed in memory; the port reads
+zeros), reflections attenuated with `exp` where `pow(10, …)` was meant, and an
+80 m room whose farthest reflections wrap around the delay line. Details,
+addresses and the emulators in
+**[reverse_engineering/roger](reverse_engineering/roger/README.md)**,
+**[reverse_engineering/follo](reverse_engineering/follo/README.md)** and
+**[reverse_engineering/orbit](reverse_engineering/orbit/README.md)**.
 
 ---
 
@@ -226,7 +301,7 @@ Requirements: Rust 1.85+ and [`cargo-truce`](https://github.com/truce-audio/truc
 ```bash
 cargo test --release
 cargo run --release -p roger --bin roger-standalone
-cargo truce install --au2 --user && auval -v aumf Rogr JdSn && auval -v aumf Folo JdSn
+cargo truce install --au2 --user && auval -v aumf Rogr JdSn && auval -v aumf Folo JdSn && auval -v aumf Orbt JdSn
 python3 reverse_engineering/roger/tools/differential_test.py \
     reverse_engineering/roger/original_binaries/Roger-3.6.2-VST-i386 target/release/roger-render /tmp/roger
 ```
@@ -239,10 +314,12 @@ rocketscience3000/
 │                        #   tables, ring buffer, vecLib FFT, denormal flush
 ├── plugins/roger/       # Roger3K: engine, vowel table, params, editor, roger-render
 ├── plugins/follo/       # Follo3K: engine, params, editor, follo-render
+├── plugins/orbit/       # Orbit3K: room model, Doppler delay line, motions, editor, orbit-render
 ├── reverse_engineering/
 │   ├── tools/           # Ghidra script, Mach-O / PEF helpers, asm annotator, Unicorn harness
 │   ├── roger/           # write-up, original binaries, decompiled code, emulator, test
-│   └── follo/           # the same for Follo
+│   ├── follo/           # the same for Follo
+│   └── orbit/           # the same for Orbit
 ├── reference/           # the original material: Mac OS 9 plug-ins and manual,
 │                        #   OS X installer and manual, review
 └── docs/                # screenshots
